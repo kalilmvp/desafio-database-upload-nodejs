@@ -1,12 +1,14 @@
-import { getRepository } from 'typeorm';
+import { getRepository, getCustomRepository } from 'typeorm';
+import TransactionsRepository from '../repositories/TransactionsRepository';
 
 import AppError from '../errors/AppError';
 
 import Transaction from '../models/Transaction';
+import Category from '../models/Category';
 
 interface RequestDTO {
   title: string;
-  value: string;
+  value: number;
   type: 'income' | 'outcome';
   category: string;
 }
@@ -18,14 +20,48 @@ class CreateTransactionService {
     type,
     category,
   }: RequestDTO): Promise<Transaction> {
-    const repository = getRepository(Transaction);
+    if (!['income', 'outcome'].includes(type)) {
+      throw new AppError('Invalid type, it should be (income | outcome)');
+    }
 
-    const transaction = repository.create({
+    const transRepository = getRepository(Transaction);
+    const categoryRepository = getRepository(Category);
+
+    const { total } = await getCustomRepository(
+      TransactionsRepository,
+    ).getBalance();
+
+    if (type === 'outcome' && value > total) {
+      throw new AppError('Transaction without a valid balance');
+    }
+
+    let foundCategory = await categoryRepository.findOne({
+      where: {
+        title: category,
+      },
+    });
+
+    // if it´s not found, the category should be created here
+    if (!foundCategory) {
+      const newCategory = categoryRepository.create({
+        title: category,
+      });
+
+      await categoryRepository.save(newCategory);
+
+      foundCategory = newCategory;
+    }
+
+    const transaction = transRepository.create({
       title,
       value,
       type,
-      category_id: 0,
+      category: foundCategory,
     });
+
+    await transRepository.save(transaction);
+
+    return transaction;
   }
 }
 
