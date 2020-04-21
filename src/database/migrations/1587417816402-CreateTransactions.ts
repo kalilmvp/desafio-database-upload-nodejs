@@ -1,7 +1,5 @@
 import { MigrationInterface, QueryRunner, Table } from 'typeorm';
 
-// CREATE TABLE "transactions" ("id" uuid NOT NULL DEFAULT uuid_generate_v4()
-// CREATE TABLE "appointments" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(),
 export default class CreateTransactions1587417816402
   implements MigrationInterface {
   public async up(queryRunner: QueryRunner): Promise<void> {

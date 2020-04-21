@@ -1,5 +1,5 @@
 import parse from 'csv-parse';
-import { getConnection, getRepository } from 'typeorm';
+import { getConnection, getRepository, In } from 'typeorm';
 import path from 'path';
 import fs from 'fs';
 import Transaction from '../models/Transaction';
@@ -35,6 +35,7 @@ class ImportTransactionsService {
     const parseCSV = csvReadStream.pipe(parser);
 
     const transactionsCSV: TransactionCSV[] = [];
+    const categoriesCSV: string[] = [];
 
     parseCSV.on('data', async line => {
       const [title, type, value, category] = line;
@@ -44,25 +45,34 @@ class ImportTransactionsService {
         value,
         category,
       });
+
+      categoriesCSV.push(category);
     });
 
     await new Promise(resolve => parseCSV.on('end', resolve));
 
-    const categories = transactionsCSV
-      .map(trans => {
-        return trans.category;
-      })
+    const existentCategories = await categoryRepository.find({
+      where: {
+        title: In(categoriesCSV),
+      },
+    });
+
+    const titlesCategories = existentCategories.map(cat => cat.title);
+
+    const categories = categoriesCSV
+      .filter(cat => !titlesCategories.includes(cat))
       .filter((elem, pos, self) => {
         return self.indexOf(elem) === pos;
       })
       .map(category => categoryRepository.create({ title: category }));
 
-    await getConnection()
+    /* await getConnection()
       .createQueryBuilder()
       .insert()
       .into(Category)
       .values(categories)
-      .execute();
+      .execute(); */
+    await categoryRepository.save(categories);
 
     const transactions = transactionsCSV.map(transaction => {
       const category_id = categories.find(
@@ -76,12 +86,13 @@ class ImportTransactionsService {
       });
     });
 
-    await getConnection()
+    /* await getConnection()
       .createQueryBuilder()
       .insert()
       .into(Transaction)
       .values(transactions)
-      .execute();
+      .execute(); */
+    await transRepository.save(transactions);
 
     await fs.promises.unlink(csvPath);
 
