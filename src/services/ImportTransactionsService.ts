@@ -74,15 +74,17 @@ class ImportTransactionsService {
       .execute(); */
     await categoryRepository.save(categories);
 
+    const finalCategories = [...categories, ...existentCategories];
+
     const transactions = transactionsCSV.map(transaction => {
-      const category_id = categories.find(
+      const categoryCreate = finalCategories.find(
         category => category.title === transaction.category,
-      )?.id;
+      );
       return transRepository.create({
         title: transaction.title,
         type: transaction.type,
         value: transaction.value,
-        category_id,
+        category: categoryCreate,
       });
     });
 
