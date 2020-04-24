@@ -1,11 +1,10 @@
 import parse from 'csv-parse';
-import { getConnection, getRepository, In } from 'typeorm';
-import path from 'path';
 import fs from 'fs';
-import Transaction from '../models/Transaction';
-import Category from '../models/Category';
-
+import path from 'path';
+import { getRepository, In } from 'typeorm';
 import uploadConfig from '../config/uploadConfig';
+import Category from '../models/Category';
+import Transaction from '../models/Transaction';
 
 interface RequestDTO {
   fileName: string;
