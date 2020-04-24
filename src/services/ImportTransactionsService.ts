@@ -8,7 +8,6 @@ import Transaction from '../models/Transaction';
 
 interface RequestDTO {
   fileName: string;
-  pathCSV: string;
 }
 
 interface TransactionCSV {
@@ -19,7 +18,7 @@ interface TransactionCSV {
 }
 
 class ImportTransactionsService {
-  async execute({ fileName, pathCSV }: RequestDTO): Promise<Transaction[]> {
+  async execute({ fileName }: RequestDTO): Promise<Transaction[]> {
     const transRepository = getRepository(Transaction);
     const categoryRepository = getRepository(Category);
 
